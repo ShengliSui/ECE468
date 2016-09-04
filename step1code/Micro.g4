@@ -8,7 +8,7 @@ KEYWORD: 'PROGRAM'|'BEGIN'|'END'|'FUNCTION'|'READ'|'WRITE'|'IF'|'ELSIF'|'ENDIF'|
 
 IDENTIFIER: (ANY_LETTER)((ANY_LETTER | ANY_DIGIT)+)? ;
 INTLITERAL: ANY_DIGIT+ ;
-FLOATLITERAL: (ANY_DIGIT+)'.'(ANY_DIGIT+) ;
+FLOATLITERAL: (ANY_DIGIT*)'.'(ANY_DIGIT+) ;
 STRINGLITERAL: '"'(~[\"])*'"' ;                  /* add '\0' if necessary */
 COMMENT: COMMENT_BEGIN(~[\n\r])* -> skip;
 WHITESPACE: [\n\r\t ]+ -> skip;
