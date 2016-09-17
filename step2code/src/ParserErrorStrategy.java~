@@ -1,0 +1,17 @@
+import org.antlr.v4.runtime.*;
+
+class ParserErrorStrategy extends DefaultErrorStrategy{
+    ParserErrorStrategy(){
+	super();
+    }
+
+
+    @Override
+    public void reportError(Parser recognizer, RecognitionException e) throw Exception{
+	System.out.println("Not Accepted");
+	/*
+	RuntimeException re = new RuntimeException();
+	throw re; */
+    }
+
+}
