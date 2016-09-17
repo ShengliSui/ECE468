@@ -70,7 +70,7 @@ addop             : '+' | '-';
 mulop             : '*' | '/';
 
 /* Complex Statements and Condition */ 
-if_stmt           : 'IF' '(' cond ')' decl stmt_list else_part 'END'IF ;
+if_stmt           : 'IF' '(' cond ')' decl stmt_list else_part 'ENDIF' ;
 else_part         : 'ELSIF' ( cond ) decl stmt_list else_part |  ;
 cond              : expr compop expr | 'TRUE' | 'FALSE' ;
 compop            : '<' | '>' | '=' | '!=' | '<=' | '>=' ;
