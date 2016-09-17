@@ -16,4 +16,8 @@ WHITESPACE: [\n\r\t ]+ -> skip;
 
 OPERATOR: ':='|'+'|'-'|'*'|'/'|'='|'!='|'<'|'>'|'('|')'|';'|','|'<='|'>=';
 
-dummy	  :;
+
+/* Program */
+program: PROGRAM id BEGIN pgm_body END;
+id: IDENTIFIER;
+pgm_body: decl func_declarations

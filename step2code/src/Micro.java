@@ -10,6 +10,15 @@ public class Micro{
 	    //get a list of matched tokens
 	    CommonTokenStream tokens = new CommonTokenStream(lexer);
 
+	    MicroParser parser = new MicroParser(tokens);
+
+	    //set error handler
+	    ANTLRErrorStrategy es = new ANTLRErrorStrategy();
+	    parser.setErrorHandler(es);
+
+	    
+
+	    /*
 	    //get Vocabulary using matched tokens, which is used to determine symbolic token type
 	    Vocabulary vocabulary = lexer.getVocabulary(); 
 
@@ -17,8 +26,9 @@ public class Micro{
 		//getSymbolicName method returns symbolic token type. Input to the method is integer token type
 		System.out.println("Token Type: " + vocabulary.getSymbolicName(token.getType()));
 		//print literal value
-		System.out.println("Value: " + token.getText());		
+		System.out.println("Value: " + token.getText());
 	    }
+	    */
 
 	} catch (RuntimeException e){
 	    System.out.println("Error!");
