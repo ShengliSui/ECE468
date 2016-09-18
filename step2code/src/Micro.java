@@ -17,7 +17,7 @@ public class Micro{
 	    ANTLRErrorStrategy es = new ParserErrorStrategy();
 	    parser.setErrorHandler(es);
 
-	    ParserRuleContext t = parser.program();
+	    ParserRuleContext pp = parser.program();
 
 	    System.out.println("Accepted");
 	}catch (RuntimeException e){
