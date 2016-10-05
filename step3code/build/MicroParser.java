@@ -2412,7 +2412,6 @@ public class MicroParser extends Parser {
 			setState(310);
 			match(KEYWORD);
 
-				st.removeScope();
 				blockCount++;
 				cat = "BLOCK "+Integer.toString(blockCount);		
 				st.addScope(cat);

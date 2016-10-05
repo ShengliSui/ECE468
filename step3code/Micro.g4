@@ -202,7 +202,6 @@ compop            : COMPOP;
 do_while_stmt
 : KEYWORD
 {
-	st.removeScope();
 	blockCount++;
 	cat = "BLOCK "+Integer.toString(blockCount);		
 	st.addScope(cat);
