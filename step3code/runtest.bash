@@ -6,7 +6,7 @@ while [ $i -le 13 ]
 do
    # echo "******Input${j[$i]}*******  " 
     java -cp lib/antlr.jar:classes/ Micro testcases/input/test${j[$i]}.micro > out${j[$i]}.out
-    echo ""
+   # echo ""
    # echo "******Expected Output${j[$i]} is******* " 
    # cat testcases/output/test${j[$i]}.out
    # echo ""
@@ -14,4 +14,6 @@ do
     diff out${j[$i]}.out testcases/output/test${j[$i]}.out
     ((i++))
 done
+
+rm *.out
 
