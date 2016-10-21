@@ -10,6 +10,7 @@ import java.util.*;
 	int blockCount = 0;
 	String cat;
 	public SymbolTable st = new SymbolTable();
+	public ShuntingYardStructure sy = new ShuntingYardStructure();
 }
 
 fragment ANY_LETTER: [A-Za-z];
