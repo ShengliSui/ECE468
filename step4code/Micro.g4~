@@ -1,0 +1,202 @@
+grammar Micro;
+
+@header
+{
+import java.util.*;
+}
+
+@members
+{
+	int blockCount = 0;
+	String cat;
+	public SymbolTable st = new SymbolTable();
+}
+
+fragment ANY_LETTER: [A-Za-z];
+fragment ANY_DIGIT: [0-9];
+fragment COMMENT_BEGIN: '--';
+
+KEYWORD: 'PROGRAM'|'BEGIN'|'END'|'FUNCTION'|'READ'|'WRITE'|'IF'|'ELSIF'|'ENDIF'|'DO'|'WHILE'|'CONTINUE'|'BREAK'|'RETURN'|'INT'|'VOID'|'STRING'|'FLOAT'|'TRUE'|'FALSE' ;
+
+IDENTIFIER: (ANY_LETTER)((ANY_LETTER | ANY_DIGIT)+)?;
+INTLITERAL: ANY_DIGIT+ ;
+FLOATLITERAL: (ANY_DIGIT*)'.'(ANY_DIGIT+) ;
+STRINGLITERAL: '"'(~[\"])*'"' ;                  /* add '\0' if necessary */
+COMMENT: COMMENT_BEGIN(~[\n\r])* -> skip;
+WHITESPACE: [\n\r\t ]+ -> skip;
+
+OPERATOR: ':='|'+'|'-'|'*'|'/'|'='|'!='|'<'|'>'|'('|')'|';'|','|'<='|'>=';
+
+/* PROGRAM */
+program           : 'PROGRAM' id 'BEGIN' pgm_body 'END' ;
+
+id returns [String iden]
+: IDENTIFIER
+{
+	$iden = $IDENTIFIER.text;
+}
+;
+
+pgm_body          : decl func_declarations;
+decl              : string_decl decl | var_decl decl | ;
+
+/* Global String Declaration */
+string_decl
+: 'STRING' id ':=' str ';'
+{
+	st.addField($id.iden,"STRING",$str.strLit);
+}
+;
+
+str returns [String strLit]
+: STRINGLITERAL
+{
+	$strLit = $STRINGLITERAL.text;
+}
+;
+
+/* Variable Declaration */
+var_decl
+: var_type id_list ';'
+{
+	st.addField($id_list.idList,$var_type.text);
+}
+;
+
+var_type          : 'FLOAT' | 'INT';
+any_type          : var_type | 'VOID';
+
+id_list returns [ArrayList<String> idList]
+: id tail=id_tail
+{
+	$idList = $tail.idList;
+	$idList.add(0,$id.iden);
+}
+;
+
+id_tail returns [ArrayList<String> idList]
+: ',' id tail=id_tail
+{
+	$idList = $tail.idList;
+	$idList.add(0,$id.text);
+}
+|  /*empty string*/
+{
+	$idList = new ArrayList<String>();
+}
+;
+
+/* Function Paramater List */
+param_decl_list
+: param_decl param_decl_tail
+{
+	$param_decl_tail.pdt[0].add(0,$param_decl.paramDecl[0]);
+	$param_decl_tail.pdt[1].add(0,$param_decl.paramDecl[1]);	
+	st.addField($param_decl_tail.pdt[0],$param_decl_tail.pdt[1]);	
+}
+|
+;
+
+param_decl returns [String[] paramDecl]
+: var_type id
+{
+	$paramDecl = new String[]{$id.iden,$var_type.text};
+}
+;
+
+param_decl_tail returns [ArrayList[] pdt]
+: ',' param_decl tail=param_decl_tail
+{
+	$pdt = $tail.pdt;
+	$pdt[0].add(0,$param_decl.paramDecl[0]);
+	$pdt[1].add(0,$param_decl.paramDecl[1]);	
+}
+| 
+{
+	$pdt = new ArrayList[2];
+}
+;
+
+/* Function Declarations */
+func_declarations : func_decl func_declarations | ;
+
+func_decl
+: 'FUNCTION' any_type id
+{
+	st.addScope($id.iden);
+}
+'('param_decl_list')' 'BEGIN' func_body 'END'
+{
+	st.removeScope();
+};
+
+func_body         : decl stmt_list ;
+
+/* Statement List */
+stmt_list         : stmt stmt_list | ;
+stmt              : base_stmt | if_stmt | do_while_stmt;
+base_stmt         : assign_stmt | read_stmt | write_stmt | return_stmt;
+
+/* Basic Statements */
+assign_stmt       : assign_expr ';';
+assign_expr       : id ':=' expr;
+read_stmt         : 'READ' '(' id_list ')'';';
+write_stmt        : 'WRITE' '(' id_list ')'';';
+return_stmt       : 'RETURN' expr ';';
+
+/* Expressions */
+expr              : expr_prefix factor;
+expr_prefix       : expr_prefix factor addop | ;
+factor            : factor_prefix postfix_expr;
+factor_prefix     : factor_prefix postfix_expr mulop | ;
+postfix_expr      : primary | call_expr;
+call_expr         : id '(' expr_list ')';
+expr_list         : expr expr_list_tail | ;
+expr_list_tail    : ',' expr expr_list_tail | ;
+primary           : '('expr')' | id | INTLITERAL | FLOATLITERAL;
+addop             : '+' | '-';
+mulop             : '*' | '/';
+
+/* Complex Statements and Condition */ 
+if_stmt
+: 'IF' '(' cond ')'
+{
+	blockCount++;
+	cat = "BLOCK "+Integer.toString(blockCount);
+	st.addScope(cat);
+}
+decl stmt_list else_part 'ENDIF'
+{
+	st.removeScope();
+}
+;
+
+else_part
+: 'ELSIF' '(' cond ')'
+{
+	st.removeScope();
+	blockCount++;
+	cat = "BLOCK "+Integer.toString(blockCount);	
+	st.addScope(cat);
+}
+decl stmt_list else_part
+|
+;
+
+cond              : expr compop expr | 'TRUE' | 'FALSE';
+compop            : '<' | '>' | '=' | '!=' | '<=' | '>=';
+
+do_while_stmt
+: 'DO'
+{
+	st.removeScope();
+	blockCount++;
+	cat = "BLOCK "+Integer.toString(blockCount);		
+	st.addScope(cat);
+}
+decl stmt_list 'WHILE' '(' cond ')'
+{
+	st.removeScope();
+}
+';'
+;
