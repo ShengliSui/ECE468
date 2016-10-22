@@ -77,7 +77,9 @@ public class MicroLexer extends Lexer {
 
 		int blockCount = 0;
 		String cat;
+		TokenClass temp;
 		public SymbolTable st = new SymbolTable();
+		public ShuntingYardStructure sy = new ShuntingYardStructure();
 
 
 	public MicroLexer(CharStream input) {

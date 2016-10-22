@@ -6,7 +6,7 @@ public class TokenClass{
     private TokenEnum tokentype = TokenEnum.VAR;
     private String stringValue = "";
     private int intValue = 0;
-    private float floatValue = 0.0;    
+    private float floatValue = 0.0f;    
 
     TokenClass(TokenEnum type, String val){
 	switch(type){
@@ -29,12 +29,12 @@ public class TokenClass{
 	}
     }
 
-    TokenClass(TokenEnum type, int val){
+    TokenClass(int val){
 	tokentype = TokenEnum.CONST_I;
 	intValue = val;
     }
 	
-    TokenClass(TokenEnum type, float val){
+    TokenClass(float val){
 	tokentype = TokenEnum.CONST_F;
 	floatValue = val;
     }

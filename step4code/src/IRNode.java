@@ -34,16 +34,16 @@ public class IRNode{
 	return result;
     }
 
-    public String setOpcode(String opcode){
+    public void setOpcode(String opcode){
 	this.opcode = opcode;
     }
-    public String setOp1(String op1){
+    public void setOp1(String op1){
 	this.op1 = op1;
     }
-    public String setOp2(String op2){
+    public void setOp2(String op2){
 	this.op2 = op2;
     }
-    public String setResult(String result){
+    public void setResult(String result){
 	this.result = result;
     }    
 }

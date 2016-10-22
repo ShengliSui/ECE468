@@ -6,7 +6,7 @@ public class Micro{
     public static void main(String[] args) throws Exception{
 	    //get our lexer(type: TokenSource)
 	    //alternative: MicroLexer lexer = new MicroLexer(new ANTLRInputStream(/* a string */);
-	//try{
+	try{
 	    MicroLexer lexer = new MicroLexer(new ANTLRFileStream(args[0]));
 	    
 	    //get a list of matched tokens
@@ -20,11 +20,12 @@ public class Micro{
 
 	    ParserRuleContext pp = parser.program();
 
-	    parser.st.printSymbolTable();
-	    /*  
+	    //parser.st.printSymbolTable();
+	    parser.sy.writeResults(parser.st);
+
 	}catch (RuntimeException e){
 	    System.out.println("Not Accepted");
-	    }*/
+	}
     }
 }
 

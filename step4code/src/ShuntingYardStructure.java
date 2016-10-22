@@ -9,10 +9,8 @@ public class ShuntingYardStructure{
     private Deque<IRNode> IRList;
     private int regVal;
     private int tempVal;
-    private SymbolTable st;
 
-    ShuntingYardStructure(SymbolTable symboltable){
-	st = symboltable;
+    ShuntingYardStructure(){
 	operatorStack = new ArrayDeque<TokenClass>();
 	outputQueue = new ArrayDeque<TokenClass>();
 	evalStack = new ArrayDeque<String>();
@@ -20,6 +18,10 @@ public class ShuntingYardStructure{
 	regVal = 0;
 	tempVal = 1;
     } 
+
+    public TokenClass peekOperatorStack(){
+	return operatorStack.peek();
+    }
 
     public void pushOperator(TokenClass item){
 	operatorStack.push(item);
@@ -53,7 +55,13 @@ public class ShuntingYardStructure{
 	return IRList.poll();
     }    
 
-    public void generateList(){
+    private void generateList(SymbolTable st){
+	String opcode;
+	String result;
+	String opLeft;
+	String opRight;
+	String[] dataType;
+
 	while(!outputQueue.isEmpty()){
 	    TokenClass temp = pollOperand();
 	    switch(temp.getType()){
@@ -69,11 +77,10 @@ public class ShuntingYardStructure{
 	    case BINARY_OP:
 		switch(temp.getString()){
 		case ":=":
-		    String opcode;
-		    String result = "$T" + Integer.toString(tempVal++);
-		    String opLeft = popEval();//20
-		    String opRight = popEval();//a
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    result = "$T" + Integer.toString(tempVal++);
+		    opLeft = popEval();//20
+		    opRight = popEval();//a
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "STOREI";
 		    }else{
@@ -83,11 +90,10 @@ public class ShuntingYardStructure{
 		    pushNode(new IRNode(opcode,result,"",opRight));
 		    break;
 		case "*":
-		    String opcode;
-		    String result = "$T" + Integer.toString(tempVal++);
-		    String opLeft = popEval();//b
-		    String opRight = popEval();//a
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    result = "$T" + Integer.toString(tempVal++);
+		    opLeft = popEval();//b
+		    opRight = popEval();//a
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "MULTI";
 		    }else{
@@ -98,11 +104,10 @@ public class ShuntingYardStructure{
 		    break;		    
 
 		case "+":
-		    String opcode;
-		    String result = "$T" + Integer.toString(tempVal++);
-		    String opLeft = popEval();//T2
-		    String opRight = popEval();//c
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    result = "$T" + Integer.toString(tempVal++);
+		    opLeft = popEval();//T2
+		    opRight = popEval();//c
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "ADDI";
 		    }else{
@@ -113,11 +118,10 @@ public class ShuntingYardStructure{
 		    break;		    
 
 		case "-":
-		    String opcode;
-		    String result = "$T" + Integer.toString(tempVal++);
-		    String opRight = popEval();//a
-		    String opLeft = popEval();//b
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    result = "$T" + Integer.toString(tempVal++);
+		    opRight = popEval();//a
+		    opLeft = popEval();//b
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "SUBI";
 		    }else{
@@ -128,11 +132,10 @@ public class ShuntingYardStructure{
 		    break;		    
 
 		case "/":
-		    String opcode;
-		    String result = "$T" + Integer.toString(tempVal++);
-		    String opRight = popEval();//c
-		    String opLeft = popEval();//T2
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    result = "$T" + Integer.toString(tempVal++);
+		    opRight = popEval();//c
+		    opLeft = popEval();//T2
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "DIVI";
 		    }else{
@@ -145,9 +148,8 @@ public class ShuntingYardStructure{
 	    case IO:
 		switch(temp.getString()){
 		case "WRITE":
-		    String opcode;
-		    String opRight = popEval();//a
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    opRight = popEval();//a
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "WRITEI";
 		    }else{
@@ -156,9 +158,8 @@ public class ShuntingYardStructure{
 		    pushNode(new IRNode(opcode,"","",opRight));
 		    break;
 		case "READ":
-		    String opcode;
-		    String opRight = popEval();//a
-		    String[] dataType = st.getType('GLOBAL',opRight);
+		    opRight = popEval();//a
+		    dataType = st.getType("GLOBAL",opRight);
 		    if(dataType[0] == "INT"){
 			opcode = "READI";
 		    }else{
@@ -171,13 +172,16 @@ public class ShuntingYardStructure{
 	}
     }
 
-    public void writeResults(){
+    public void writeResults(SymbolTable st){
+	generateList(st);
 	writeA("IR code");
 	for(IRNode node : IRList){
 	    writeA(node);
 	}
 	writeA("tiny code");
-	writeS(st.getNames("GLOBAL"));
+	for(String item : st.getNames("GLOBAL")){
+	    writeS(item);
+	}
 	for(IRNode node : IRList){
 	    writeS(node);
 	}
@@ -192,21 +196,21 @@ public class ShuntingYardStructure{
 	String result;	
 	if(node.getOp1() == ""){
 	    op1 = "";
-	}else if(node.getOp1()[0] == "$"){
+	}else if(node.getOp1().startsWith("$")){
 	    op1 = "r"+Integer.toString(regVal++)+" ";
 	}else{
 	    op1 = node.getOp1()+" ";
 	}
 	if(node.getOp2() == ""){
 	    op2 = "";
-	}else if(node.getOp2()[0] == "$"){
+	}else if(node.getOp2().startsWith("$")){
 	    op2 = "r"+Integer.toString(regVal++)+" ";
 	}else{
 	    op2 = node.getOp2()+" ";
 	}	
 	if(node.getResult() == ""){
 	    result = "";
-	}else if(node.getResult()[0] == "$"){
+	}else if(node.getResult().startsWith("$")){
 	    result = "r"+Integer.toString(regVal++);
 	}else{
 	    result = node.getResult();
@@ -263,7 +267,7 @@ public class ShuntingYardStructure{
 	case "STOREI":
 	case "STOREF":
 	    opcode1 = "move ";
-	System.out.println(opcode2+op1+result);
+	System.out.println(opcode1+op1+result);
 	break;
 	case "READI":
 	    opcode1 = "sys readi ";
@@ -284,10 +288,8 @@ public class ShuntingYardStructure{
 	}
     }
 
-    private void writeS(String[] names){
-	for(String name : names){
-	    System.out.println("var "+name);
-	}
+    private void writeS(String var){
+	System.out.println("var "+var);
     }
 
     private void writeA(IRNode node){

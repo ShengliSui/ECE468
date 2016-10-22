@@ -9,6 +9,7 @@ import java.util.*;
 {
 	int blockCount = 0;
 	String cat;
+	TokenClass temp;
 	public SymbolTable st = new SymbolTable();
 	public ShuntingYardStructure sy = new ShuntingYardStructure();
 }
@@ -153,9 +154,79 @@ base_stmt         : assign_stmt | read_stmt | write_stmt | return_stmt;
 
 /* Basic Statements */
 assign_stmt       : assign_expr SCOLON;
-assign_expr       : id ASSIGN expr;
-read_stmt         : KEYWORD LP id_list RP SCOLON;
-write_stmt        : KEYWORD LP id_list RP SCOLON;
+assign_expr
+: id
+{
+	sy.pushOperand(new TokenClass(TokenEnum.VAR, $id.iden));
+}
+ASSIGN
+{
+	sy.pushOperator(new TokenClass(TokenEnum.BINARY_OP, $ASSIGN.text));
+}
+expr;
+
+read_stmt
+: KEYWORD
+{
+	if($KEYWORD.text == "READ"){
+		sy.pushOperator(new TokenClass(TokenEnum.IO,$KEYWORD.text));
+	}
+}
+LP
+{
+	sy.pushOperator(new TokenClass(TokenEnum.UNARY_OP, $LP.text));
+}
+id_list
+{
+	for(String item : $id_list.idList){
+		sy.pushOperand(new TokenClass(TokenEnum.VAR,item));	
+	}
+}
+RP
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.UNARY_OP && temp.getString() != "(" && temp.getString() != ":="){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();
+	}
+	sy.popOperator();
+	if(temp.getType() == TokenEnum.IO){
+		sy.popOperator();
+	}
+}
+SCOLON;
+
+write_stmt
+: KEYWORD
+{
+	if($KEYWORD.text == "WRITE"){
+		sy.pushOperator(new TokenClass(TokenEnum.IO,$KEYWORD.text));
+	}
+}
+LP
+{
+	sy.pushOperator(new TokenClass(TokenEnum.UNARY_OP, $LP.text));
+}
+id_list
+{
+	for(String item : $id_list.idList){
+		sy.pushOperand(new TokenClass(TokenEnum.VAR,item));	
+	}
+}
+RP
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.UNARY_OP && temp.getString() != "(" && temp.getString() != ":="){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();
+	}
+	sy.popOperator();
+	if(temp.getType() == TokenEnum.IO){
+		sy.popOperator();
+	}
+}
+SCOLON;
+
 return_stmt       : KEYWORD expr SCOLON;
 
 /* Expressions */
@@ -164,12 +235,103 @@ expr_prefix       : expr_prefix factor addop | ;
 factor            : factor_prefix postfix_expr;
 factor_prefix     : factor_prefix postfix_expr mulop | ;
 postfix_expr      : primary | call_expr;
-call_expr         : id LP expr_list RP;
+
+call_expr
+: id
+{
+	sy.pushOperand(new TokenClass(TokenEnum.VAR, $id.iden));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(TokenEnum.UNARY_OP, $LP.text));
+}
+expr_list RP
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.UNARY_OP && temp.getString() != "(" && temp.getString() != ":="){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();
+	}
+	sy.popOperator();
+	if(temp.getType() == TokenEnum.IO){
+		sy.popOperator();
+	}
+}
+;
 expr_list         : expr expr_list_tail | ;
 expr_list_tail    : COMMA expr expr_list_tail | ;
-primary           : LP expr RP | id | INTLITERAL | FLOATLITERAL;
-addop             : ADD | SUB;
-mulop             : MULT | DIV;
+
+primary
+: LP
+{
+	sy.pushOperator(new TokenClass(TokenEnum.UNARY_OP, $LP.text));
+}
+expr RP
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.UNARY_OP && temp.getString() != "(" && temp.getString() != ":="){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();
+	}
+	sy.popOperator();
+	if(temp.getType() == TokenEnum.IO){
+		sy.popOperator();
+	}
+}
+| id
+{
+	sy.pushOperand(new TokenClass(TokenEnum.VAR, $id.iden));
+}
+| INTLITERAL
+{
+	sy.pushOperand(new TokenClass(TokenEnum.CONST_I, $INTLITERAL.text));
+}
+| FLOATLITERAL
+{
+	sy.pushOperand(new TokenClass(TokenEnum.CONST_F, $FLOATLITERAL.text));
+}
+;
+
+addop
+: ADD
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.BINARY_OP && (temp.getString() == "+" || temp.getString() == "-")){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();	
+	}
+	sy.pushOperator(new TokenClass(TokenEnum.BINARY_OP,$ADD.text));
+}
+| SUB
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.BINARY_OP && (temp.getString() == "+" || temp.getString() == "-")){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();	
+	}
+	sy.pushOperator(new TokenClass(TokenEnum.BINARY_OP,$SUB.text));
+}
+;
+mulop
+: MULT
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.BINARY_OP && (temp.getString() == "*" || temp.getString() == "/")){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();	
+	}
+	sy.pushOperator(new TokenClass(TokenEnum.BINARY_OP,$MULT.text));
+}
+| DIV
+{
+	temp = sy.peekOperatorStack();
+	while(temp.getType() == TokenEnum.BINARY_OP && (temp.getString() == "*" || temp.getString() == "/")){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();	
+	}
+	sy.pushOperator(new TokenClass(TokenEnum.BINARY_OP,$DIV.text));
+}
+;
 
 /* Complex Statements and Condition */ 
 if_stmt
