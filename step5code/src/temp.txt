@@ -1,0 +1,64 @@
+read_stmt
+: KEYWORD
+{
+	if("READ".equals($KEYWORD.text)){
+		sy.pushOperator(new TokenClass(TokenEnum.IO,$KEYWORD.text));
+	}
+}
+LP
+{
+	sy.pushOperator(new TokenClass(TokenEnum.UNARY_OP, $LP.text));
+}
+id_list
+{
+	for(String item : $id_list.idList){
+		sy.pushOperand(new TokenClass(TokenEnum.VAR,item));	
+	}
+}
+RP
+{
+	temp = sy.peekOperatorStack();
+	while(!temp.getString().equals("(") && !temp.getString().equals(":=")){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();
+	}
+	sy.popOperator();
+	temp = sy.peekOperatorStack();
+	if(temp.getType() == TokenEnum.IO){
+		sy.popOperator();
+	}
+}
+SCOLON;
+
+write_stmt
+: KEYWORD
+{
+	System.out.println($KEYWORD.text);
+	if("WRITE".equals($KEYWORD.text)){
+		sy.pushOperator(new TokenClass(TokenEnum.IO,$KEYWORD.text));
+	}
+}
+LP
+{
+	sy.pushOperator(new TokenClass(TokenEnum.UNARY_OP, $LP.text));
+}
+id_list
+{
+	for(String item : $id_list.idList){
+		sy.pushOperand(new TokenClass(TokenEnum.VAR,item));	
+	}
+}
+RP
+{
+	temp = sy.peekOperatorStack();
+	while(!temp.getString().equals("(") && !temp.getString().equals(":=")){
+		sy.pushOperand(sy.popOperator());
+		temp = sy.peekOperatorStack();
+	}
+	sy.popOperator();
+	temp = sy.peekOperatorStack();
+	if(temp.getType() == TokenEnum.IO){
+		sy.popOperator();
+	}
+}
+SCOLON;
