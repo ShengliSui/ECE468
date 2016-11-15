@@ -1,0 +1,495 @@
+grammar Micro;
+
+@header
+{
+import java.util.*;
+}
+
+@members
+{
+	//step2
+	int blockCount = 0;
+	String cat;
+	SymbolTable st = new SymbolTable();
+
+	//step4
+	ShuntingYardStructure sy = new ShuntingYardStructure();
+	TokenClass token;
+	int assignFlag = 0;
+}
+
+fragment ANY_LETTER: [A-Za-z];
+fragment ANY_DIGIT: [0-9];
+fragment COMMENT_BEGIN: '--';
+
+
+INTLITERAL: ANY_DIGIT+ ;
+FLOATLITERAL: (ANY_DIGIT*)'.'(ANY_DIGIT+) ;
+STRINGLITERAL: '"'(~[\"])*'"' ;                  /* add '\0' if necessary */
+IDENTIFIER: (ANY_LETTER)((ANY_LETTER | ANY_DIGIT)+)?;
+COMMENT: COMMENT_BEGIN(~[\n\r])* -> skip;
+WHITESPACE: [\n\r\t ]+ -> skip;
+
+ADD: '+';
+SUB: '-';
+MULT: '*';
+DIV: '/';
+LP: '(';
+RP: ')';
+SCOLON: ';';
+COMMA: ',';
+ASSIGN: ':=';
+
+COMPOP : '<'|'>'|'='|'!='|'<='|'>=';
+
+/* PROGRAM */
+program           : 'PROGRAM' id 'BEGIN' pgm_body 'END' ;
+
+id returns [String iden]
+: IDENTIFIER
+{
+	$iden = $IDENTIFIER.text;
+}
+;
+
+pgm_body          : decl func_declarations;
+decl              : string_decl decl | var_decl decl | ;
+
+/* Global String Declaration */
+string_decl
+: 'STRING' id ASSIGN str SCOLON
+{
+	st.addField($id.iden,"STRING",$str.strLit);
+}
+;
+
+str returns [String strLit]
+: STRINGLITERAL
+{
+	$strLit = $STRINGLITERAL.text;
+}
+;
+
+/* Variable Declaration */
+var_decl
+: var_type id_list SCOLON
+{
+	st.addField($id_list.idList,$var_type.text);
+	sy.addFuncLocal($id_list.idList);
+}
+;
+
+var_type          : 'FLOAT' | 'INT';
+any_type          : var_type | 'VOID';
+
+id_list returns [ArrayList<String> idList]
+: id tail=id_tail
+{
+	$idList = $tail.idList;
+	$idList.add(0,$id.iden);
+}
+;
+
+id_tail returns [ArrayList<String> idList]
+: COMMA id tail=id_tail
+{
+	$idList = $tail.idList;
+	$idList.add(0,$id.text);
+}
+|  /*empty string*/
+{
+	$idList = new ArrayList<String>();
+}
+;
+
+/* Function Paramater List */
+param_decl_list
+: param_decl param_decl_tail
+{
+	$param_decl_tail.pdt.get(0).add(0,$param_decl.paramDecl[0]);
+	$param_decl_tail.pdt.get(1).add(0,$param_decl.paramDecl[1]);	
+	st.addField($param_decl_tail.pdt.get(0),$param_decl_tail.pdt.get(1));	
+	sy.addFuncParam($param_decl_tail.pdt.get(0));
+}
+|
+;
+
+param_decl returns [String[] paramDecl]
+: var_type id
+{
+	$paramDecl = new String[]{$id.iden,$var_type.text};
+}
+;
+
+param_decl_tail returns [ArrayList<ArrayList<String>> pdt]
+: COMMA param_decl tail=param_decl_tail
+{
+	$pdt = $tail.pdt;
+	$pdt.get(0).add(0,$param_decl.paramDecl[0]);
+	$pdt.get(1).add(0,$param_decl.paramDecl[1]);	
+}
+| 
+{
+	$pdt = new ArrayList<ArrayList<String>>();
+	$pdt.add(new ArrayList<String>());
+	$pdt.add(new ArrayList<String>());	
+}
+;
+
+/* Function Declarations */
+func_declarations : func_decl func_declarations | ;
+
+func_decl
+: 'FUNCTION' any_type id
+{
+	st.addScope($id.iden);
+	st.addField($id.iden,$any_type.text);
+	sy.addScope($id.iden);
+	sy.pushOperand(new TokenClass(Enum.tokenType.FUNC,"FUNCTION"));
+}
+LP param_decl_list RP 'BEGIN' func_body 'END'
+{
+	//if return statement is missing
+	if(!st.getType(st.peekScope(),st.peekScope())[0].equals("VOID") && !sy.peekOperand().isValue("RETURN")){
+  	   System.out.println("no return value"+st.peekScope()+" "+sy.peekOperand().getValue()); System.exit(1);
+	}
+	st.removeScope();
+	sy.removeScope();
+};
+
+func_body         : decl stmt_list ;
+
+/* Statement List */
+stmt_list         : stmt stmt_list | ;
+stmt              : base_stmt | if_stmt | do_while_stmt;
+base_stmt         : assign_stmt | read_stmt | write_stmt | return_stmt;
+
+/* Basic Statements */
+assign_stmt
+: assign_expr SCOLON
+{
+	if(assignFlag == 1){
+	     token = sy.peekOperator();
+	     while(token!=null && (token.isType(Enum.tokenType.BINARY_OP) ||(token.isType(Enum.tokenType.BINARY_OP) && !token.isValue(":=")))){
+	          sy.pushOperand(sy.popOperator());
+		  token = sy.peekOperator();
+	     }
+	     if(token != null){
+	          sy.pushOperand(sy.popOperator());
+	     }
+	     assignFlag =0;
+	}
+}
+;
+
+assign_expr
+: id
+{
+	sy.pushOperand(new TokenClass(Enum.tokenType.VAR, $id.iden));
+}
+ASSIGN
+{
+	assignFlag = 1;
+	sy.pushOperator(new TokenClass(Enum.tokenType.BINARY_OP, $ASSIGN.text));
+}
+expr;
+
+read_stmt
+: 'READ'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.IO,"READ"));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));
+}
+id_list
+{
+	for(String item : $id_list.idList){
+		sy.pushOperand(new TokenClass(Enum.tokenType.VAR,item));	
+	}
+}
+RP
+{
+	token = sy.peekOperator();
+	while(!token.isValue("(") && !token.isValue(":=")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	if(token.getType() == Enum.tokenType.IO){
+		sy.pushOperand(sy.popOperator());
+	}
+}
+SCOLON;
+
+write_stmt
+: 'WRITE'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.IO,"WRITE"));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));
+}
+id_list
+{
+	for(int i = $id_list.idList.size()-1; i >= 0; i--){
+		sy.pushOperand(new TokenClass(Enum.tokenType.VAR,$id_list.idList.get(i)));	
+	}
+}
+RP
+{
+	token = sy.peekOperator();
+	while(!token.isValue("(") && !token.isValue(":=")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	if(token.isType(Enum.tokenType.IO)){
+		sy.pushOperand(sy.popOperator());
+	}
+}
+SCOLON;
+
+return_stmt       :
+'RETURN'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, "RETURN"));
+}
+expr
+{
+	token = sy.peekOperator();
+	while(!token.isValue("RETURN")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.pushOperand(sy.popOperator());
+}
+SCOLON;
+
+/* Expressions */
+expr              : expr_prefix factor;
+expr_prefix       : expr_prefix factor addop | ;
+factor            : factor_prefix postfix_expr;
+factor_prefix     : factor_prefix postfix_expr mulop | ;
+postfix_expr      : primary | call_expr;
+
+call_expr
+: id
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.FUNC, $id.iden));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));
+}
+expr_list RP
+{
+	token = sy.peekOperator();
+	while(!token.isValue("(") && !token.isValue(":=")){
+ 		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	assert token.isType(Enum.tokenType.FUNC) : "Why is func missing?";
+	sy.pushOperand(sy.popOperator());
+}
+;
+expr_list         : expr expr_list_tail | ;
+expr_list_tail    : COMMA expr expr_list_tail | ;
+
+primary
+: LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));
+}
+expr RP
+{
+	token = sy.peekOperator();
+	while(!token.isValue("(") && !token.isValue(":=")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	if(token.isType(Enum.tokenType.IO)){
+		sy.popOperator();
+	}
+}
+| id
+{
+	sy.pushOperand(new TokenClass(Enum.tokenType.VAR, $id.iden));
+}
+| INTLITERAL
+{
+	sy.pushOperand(new TokenClass(Enum.tokenType.CONST_I, Integer.valueOf($INTLITERAL.text)));
+}
+| FLOATLITERAL
+{
+	sy.pushOperand(new TokenClass(Enum.tokenType.CONST_F, Float.valueOf($FLOATLITERAL.text)));
+}
+;
+
+addop
+: ADD
+{
+	token = sy.peekOperator();
+
+	while((token.isType(Enum.tokenType.BINARY_OP)) & (token.isValue("+") || token.isValue("-") || token.isValue("*") || token.isValue("/"))){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();	
+	}
+	sy.pushOperator(new TokenClass(Enum.tokenType.BINARY_OP,$ADD.text));
+}
+| SUB
+{
+	token = sy.peekOperator();
+	while(token.isType(Enum.tokenType.BINARY_OP) && (token.isValue("+") || token.isValue("-") || token.isValue("*") || token.isValue("/"))){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();	
+	}
+	sy.pushOperator(new TokenClass(Enum.tokenType.BINARY_OP,$SUB.text));
+}
+;
+mulop
+: MULT
+{
+	token = sy.peekOperator();
+	while(token.isType(Enum.tokenType.BINARY_OP) && (token.isValue("*") || token.isValue("/"))){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();	
+	}
+	sy.pushOperator(new TokenClass(Enum.tokenType.BINARY_OP,$MULT.text));
+}
+| DIV
+{
+	token = sy.peekOperator();
+	while(token.isType(Enum.tokenType.BINARY_OP) && (token.isValue("*") || token.isValue("/"))){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();	
+	}
+	sy.pushOperator(new TokenClass(Enum.tokenType.BINARY_OP,$DIV.text));
+}
+;
+
+/* Complex Statements and Condition */ 
+if_stmt
+: 'IF'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.BRANCH,"IF"));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));	
+}
+cond RP
+{
+	blockCount++;
+	cat = "BLOCK "+Integer.toString(blockCount);
+	st.addScope(cat);
+
+	token = sy.peekOperator();
+	while(!token.isValue("(")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	if(token.isType(Enum.tokenType.BRANCH)){
+		sy.pushOperand(sy.popOperator());
+	}
+}
+decl stmt_list else_part 'ENDIF'
+{
+	st.removeScope();
+
+	sy.pushOperand(new TokenClass(Enum.tokenType.BRANCH,"ENDIF"));
+}
+;
+
+else_part
+: 'ELSIF'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.BRANCH,"ELSIF"));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));	
+}
+cond RP
+{
+	st.removeScope();
+	blockCount++;
+	cat = "BLOCK "+Integer.toString(blockCount);	
+	st.addScope(cat);
+
+	token = sy.peekOperator();
+	while(!token.isValue("(")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	if(token.isType(Enum.tokenType.BRANCH)){
+		sy.pushOperand(sy.popOperator());
+	}
+}
+decl stmt_list else_part
+|
+;
+
+cond              : expr compop expr | 'TRUE'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP,"TRUE"));
+}
+| 'FALSE'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP,"FALSE"));
+}
+;
+
+compop
+: COMPOP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.BINARY_OP,$COMPOP.text));
+}
+;
+
+do_while_stmt
+: 'DO'
+{
+	blockCount++;
+	cat = "BLOCK "+Integer.toString(blockCount);		
+	st.addScope(cat);
+
+	sy.pushOperand(new TokenClass(Enum.tokenType.BRANCH,"DO"));
+}
+decl stmt_list 'WHILE'
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.BRANCH,"WHILE"));
+}
+LP
+{
+	sy.pushOperator(new TokenClass(Enum.tokenType.UNARY_OP, $LP.text));	
+}
+cond RP
+{
+	st.removeScope();
+
+	token = sy.peekOperator();
+	while(!token.isValue("(")){
+		sy.pushOperand(sy.popOperator());
+		token = sy.peekOperator();
+	}
+	sy.popOperator();
+	token = sy.peekOperator();
+	if(token.isType(Enum.tokenType.BRANCH)){
+		sy.pushOperand(sy.popOperator());
+	}
+}
+SCOLON
+;
