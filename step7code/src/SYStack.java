@@ -1,0 +1,559 @@
+import java.util.*; 
+import org.antlr.v4.runtime.*;
+
+public class SYStack{
+
+    private Deque<TokenClass> operatorStack;
+    private Deque<TokenClass> outputQueue;
+    private Deque<String> evalStack;
+    private ArrayDeque<IRNode> IRList;
+
+    private Deque<Integer> dwhileLabel;
+    private Deque<Integer> endLabel;
+    private Deque<Integer> elifLabel;
+    private FunctionST fst;
+    private int localNum;
+
+    private static int printFlag;
+
+    private static LinkedList<TinyRegister> registers = new LinkedList<TinyRegister>();
+
+    SYStack(){
+	this.operatorStack = new ArrayDeque<TokenClass>();
+	this.outputQueue = new ArrayDeque<TokenClass>();
+	this.evalStack = new ArrayDeque<String>();
+	this.IRList = new ArrayDeque<IRNode>();
+
+	this.elifLabel = new ArrayDeque<Integer>();
+	this.dwhileLabel = new ArrayDeque<Integer>();
+	this.endLabel = new ArrayDeque<Integer>();		
+	this.printFlag = 0;
+    }
+
+    public void writeInit(FunctionST fst, int localNum){
+	this.localNum = localNum;
+	this.fst = fst;
+    }
+
+    public TokenClass peekOperator(){
+	return operatorStack.peekFirst();
+    }
+
+    public TokenClass peekOperand(){
+	return outputQueue.peekFirst();
+    }
+
+    public void pushOperator(TokenClass item){
+	operatorStack.push(item);
+	if(printFlag==1){
+	    print(operatorStack);
+	    print(outputQueue);
+	    printt(evalStack);
+	    System.out.println("--------------");
+	}
+    }
+
+    public TokenClass popOperator(){
+	TokenClass t = operatorStack.pop();
+	if(printFlag==1){
+	    print(operatorStack);
+	    print(outputQueue);
+	    printt(evalStack);
+	    System.out.println("--------------");
+	}
+	return t;
+    }
+
+    public void pushOperand(TokenClass item){
+	outputQueue.push(item);
+	if(printFlag==1){
+	    print(operatorStack);
+	    print(outputQueue);
+	    printt(evalStack);
+	    System.out.println("--------------");
+	}
+    }
+
+    public TokenClass pollOperand(){
+	TokenClass f = outputQueue.pollLast();
+	if(printFlag==1){
+	    print(operatorStack);
+	    print(outputQueue);
+	    printt(evalStack);
+	    System.out.println("--------------");
+	}
+	return f;
+    }    
+
+    public void pushEval(String item){
+	evalStack.push(item);
+	if(printFlag==1){
+	    print(operatorStack);
+	    print(outputQueue);
+	    printt(evalStack);
+	    System.out.println("--------------");
+	}
+    }
+
+    public String popEval(){
+	String g = evalStack.pop();
+	if(printFlag==1){
+	    print(operatorStack);
+	    print(outputQueue);
+	    printt(evalStack);
+	    System.out.println("--------------");
+	}
+	return g;
+    }
+
+    public boolean evalIsEmpty(){
+	return evalStack.isEmpty();
+    }
+
+    public boolean operatorIsEmpty(){
+	return operatorStack.isEmpty();
+    }        
+
+    public boolean operandIsEmpty(){
+	return outputQueue.isEmpty();
+    }
+    
+    public void pushNode(IRNode node){
+	IRList.add(node);
+	if(printFlag==1){
+	    printg(IRList);
+	}
+    }
+
+    public IRNode pollNode(){
+	IRNode n = IRList.pollLast();
+	if(printFlag==1){
+	    printg(IRList);
+	}
+	return n;
+    }    
+
+    public ArrayDeque<IRNode> getIRList(){
+	return IRList.clone();
+    }
+
+    public void writeIR(){
+	for(IRNode node : IRList){
+	    writeA(node);
+	}
+    }
+	
+    public void writeTiny(){
+	registers.add(new TinyRegister("r0"));
+	registers.add(new TinyRegister("r1"));
+	registers.add(new TinyRegister("r2"));
+	registers.add(new TinyRegister("r3"));		      
+
+	for(IRNode node : IRList){
+	    if(node.predecessors.size() != 1){
+		System.out.println(";Spilling registers at beginning of basic block");
+		spillAllRegs();
+	    }
+	    writeA(node);
+	    writeS(node);
+	}
+    }
+
+    private static void spillAllRegs(){
+	freeReg(0);
+	freeReg(1);
+	freeReg(2);
+	freeReg(3);	
+    }
+
+    private static TinyRegister freeReg(int num){
+	TinyRegister temp = registers.get(num);
+	temp.tempRegVal = "";
+	temp.dirty = false;
+	return temp;
+    }
+
+    private String getOp(String op){
+	if(op.equals("")){
+	    return "";
+	}else if(op.startsWith("$T")){
+	    //return "r"+Integer.toString(Integer.parseInt(op.substring(2))-1)+" ";
+	    return ensure(op);
+	}else if(op.startsWith("$L")||op.startsWith("$P")||op.startsWith("$R")){
+	    return fst.get(op)+" ";
+	}else{
+	    return op+" ";
+	}
+    }
+
+    private static String ensure(String op){
+	String res;
+	int i;
+	if(printFlag==1) System.out.println(";ensure() ");
+	for(i = 0; i < registers.size(); i++){
+	    if(registers.get(i).tempRegVal.equals(op)){
+		if(printFlag==1) System.out.println(op + " gets r" + i);
+		break;
+	    }
+	}
+	if(i >= registers.size()){
+	    res = allocate(op);
+	}else{
+	    res = registers.get(i).regVal;
+	}
+
+	return res + " ";
+    }
+
+    private static String allocate(String op){
+	TinyRegister r;
+	int i;
+	if(printFlag==1) System.out.print(";allocate() ");
+	for(i = 0; i < registers.size(); i++){
+	    if(registers.get(i).tempRegVal.equals("")){
+		break;
+	    }
+	}
+	if(i >= registers.size()){
+	    r = freeReg(0);
+	}else{
+	    r = registers.get(i);
+	}
+	r.tempRegVal = op;
+	r.dirty = true;
+
+	return r.regVal;
+    }
+
+    private void writeS(IRNode node){
+	String opcode1;
+	String opcode2;
+	String op1;
+	String op2;
+	String result;
+
+	op1 = getOp(node.getOp1());
+	op2 = getOp(node.getOp2());
+	result = getOp(node.getResult());
+
+	switch(node.getOpcode()){
+	case "ADDI":
+	    opcode1 = "move ";
+	    opcode2 = "addi ";
+	    System.out.println(opcode1+op1+result);
+	    System.out.println(opcode2+op2+result);	    
+	    break;
+	case "ADDF":
+	    opcode1 = "move ";
+	    opcode2 = "addr ";
+	    System.out.println(opcode1+op1+result);
+	    System.out.println(opcode2+op2+result);	    
+	    break;
+	case "SUBI":
+	    opcode1 = "move ";
+	    opcode2 = "subi ";
+	    System.out.println(opcode1+op1+result);
+	    System.out.println(opcode2+op2+result);	    
+	    break;
+	case "SUBF":
+	    opcode1 = "move ";
+	    opcode2 = "subr ";
+	    System.out.println(opcode1+op1+result);
+	    System.out.println(opcode2+op2+result);	    
+	    break;
+	case "MULTI":
+	    opcode1 = "move ";
+	    opcode2 = "muli ";
+	    System.out.println(opcode1+op2+result);
+	    System.out.println(opcode2+op1+result);	    
+	    break;
+	case "MULTF":
+	    opcode1 = "move ";
+	    opcode2 = "mulr ";
+	    System.out.println(opcode1+op2+result);
+	    System.out.println(opcode2+op1+result);	    
+	    break;
+	case "DIVI":
+	    opcode1 = "move ";
+	    opcode2 = "divi ";
+	    System.out.println(opcode1+op1+result);
+	    System.out.println(opcode2+op2+result);	    
+	    break;
+	case "DIVF":
+	    opcode1 = "move ";
+	    opcode2 = "divr ";
+	    System.out.println(opcode1+op1+result);
+	    System.out.println(opcode2+op2+result);	    
+	    break;
+	case "STOREI":
+	    opcode1 = "move ";
+	    System.out.println(opcode1+op1+result);
+	    break;
+	case "STOREF":
+	    opcode1 = "move ";
+	    System.out.println(opcode1+op1+result);
+	    break;
+	case "READI":
+	    opcode1 = "sys readi ";
+	    System.out.println(opcode1+result);	    		    
+	    break;	 	    
+	case "READF":
+	    opcode1 = "sys readr ";
+	    System.out.println(opcode1+result);
+	    break;	 	    
+	case "WRITEI":
+	    opcode1 = "sys writei ";
+	    System.out.println(opcode1+result);
+	    break;	 	    
+	case "WRITEF":
+	    opcode1 = "sys writer ";
+	    System.out.println(opcode1+result);
+	    break;	 	    
+	case "WRITES":
+	    opcode1 = "sys writes ";
+	    System.out.println(opcode1+result);
+	    break;
+	case "LTI":
+	    opcode1 = "cmpi ";
+	    opcode2 = "jlt ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "LEI":
+	    opcode1 = "cmpi ";
+	    opcode2 = "jle ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "GTI":
+	    opcode1 = "cmpi ";
+	    opcode2 = "jgt ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "GEI":
+	    opcode1 = "cmpi ";
+	    opcode2 = "jge ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "NEI":
+	    opcode1 = "cmpi ";
+	    opcode2 = "jne ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "EQI":
+	    opcode1 = "cmpi ";
+	    opcode2 = "jeq ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "LTF":
+	    opcode1 = "cmpr ";
+	    opcode2 = "jlt ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "LEF":
+	    opcode1 = "cmpr ";
+	    opcode2 = "jle ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "GTF":
+	    opcode1 = "cmpr ";
+	    opcode2 = "jgt ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "GEF":
+	    opcode1 = "cmpr ";
+	    opcode2 = "jge ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "NEF":
+	    opcode1 = "cmpr ";
+	    opcode2 = "jne ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "EQF":
+	    opcode1 = "cmpr ";
+	    opcode2 = "jeq ";	    
+	    System.out.println(opcode1+op1+op2);
+	    System.out.println(opcode2+result);	    
+	    checkLive(node);
+	    break;	 	    
+	case "JUMP":
+	    opcode1 = "jmp ";
+	    System.out.println(opcode1+result);
+	    break;	 	    
+	case "LABEL":
+	    opcode1 = "label ";
+	    System.out.println(opcode1+result);
+	    try{
+		int dummyI = Integer.parseInt(result.substring(5));
+	    }catch(Exception a){
+		try{
+		    float dummyF = Float.parseFloat(result.substring(5));
+		}catch(Exception b){
+		    opcode2 = "link " + String.valueOf(localNum);
+		    System.out.println(opcode2);		    
+		}
+	    }
+	    break;
+	case "RET":
+	    opcode1 = "unlnk";
+	    opcode2 = "ret";
+	    System.out.println(opcode1);
+	    System.out.println(opcode2);
+	    break;
+	case "PUSH":
+	    opcode1 = "push ";
+	    System.out.println(opcode1+result);
+	    break;
+	case "POP":
+	    opcode1 = "pop ";
+	    System.out.println(opcode1+result);
+	    break;	    
+	case "JSR":
+	    opcode1 = "jsr ";
+	    pushReg();
+	    System.out.println(opcode1+result);
+	    popReg();
+	    break;
+	}
+	int reg;
+	if (!node.inSet.contains(node.getOp1())) {
+	    reg = findRegister(node.getOp1());
+	    if(reg != -1){
+		freeReg(reg);
+	    }
+	}	    
+	if (!node.inSet.contains(node.getOp2())) {
+	    reg = findRegister(node.getOp2());
+	    if(reg != -1){
+		freeReg(reg);
+	    }
+	}	    
+	if (!node.inSet.contains(node.getResult())) {
+	    reg = findRegister(node.getResult());
+	    if(reg != -1){
+		freeReg(reg);
+	    }
+	}	
+    }
+
+    private static int findRegister(String Op){
+	for(int i = 0; i < registers.size(); i++){
+	    if(registers.get(i).tempRegVal.equals(Op)){
+		return i;
+	    }
+	}
+	return -1;
+    }
+
+    private void checkLive(IRNode node){
+	int reg;
+	if (!node.inSet.contains(node.getOp1())) {
+	    reg = findRegister(node.getOp1());
+	    if(reg != -1){
+		freeReg(reg);
+	    }
+	}	    
+	if (!node.inSet.contains(node.getOp2())) {
+	    reg = findRegister(node.getOp2());
+	    if(reg != -1){
+		freeReg(reg);
+	    }
+	}
+    }
+
+    private void pushReg(){
+	System.out.print("push r0\npush r1\npush r2\npush r3\n");
+    }
+
+    private void popReg(){
+	System.out.print("pop r3\npop r2\npop r1\npop r0\n");
+    }    
+
+    private void writeA(IRNode node){
+	String s1 = (node.getOp1().equals("")) ? "" : " ";
+	String s2 = (node.getOp2().equals("")) ? "" : " ";
+	String op = node.getOpcode();
+	switch(op){
+	case "EQF":
+	case "NEF":
+	case "GTF":
+	case "LTF":
+	case "GEF":
+	case "LEF":	    	    	    	    	    	    
+	case "EQI":
+	case "NEI":
+	case "GTI":
+	case "LTI":
+	case "GEI":
+	case "LEI":
+	    op = op.substring(0,2);
+	}
+	System.out.println(";"+op+" "+node.getOp1()+s1+node.getOp2()+s2+node.getResult());
+    }
+
+    private void print(Deque<TokenClass> q){
+	Iterator<TokenClass> i = q.iterator();
+	while(i.hasNext()){
+	    TokenClass tt = i.next();
+	    print(tt);
+	}
+	System.out.println("");
+    }
+
+    private void printt(Deque<String> q){
+	Iterator<String> i = q.iterator();
+	while(i.hasNext()){
+	    String tt = i.next();
+	    print(tt);
+	}
+	System.out.println("");
+    }
+
+    private void printg(Deque<IRNode> q){
+	Iterator<IRNode> i = q.iterator();
+	while(i.hasNext()){
+	    IRNode tt = i.next();
+	    print(tt);
+	}
+	System.out.println("");
+    }
+
+    private void print(IRNode g){
+	System.out.println("-"+g.getOpcode()+"-"+g.getOp1()+"-"+g.getOp2()+"-"+g.getResult());
+    }
+
+    private void print(String q){
+	System.out.print(q+" ");
+    }
+
+    private void print(TokenClass item){
+	System.out.print(item.getValue()+ " ");
+    }
+
+    private void print(String s,TokenClass item){
+	System.out.print(s + " ");
+	System.out.print(item.getValue()+ " ");
+    }
+
+}

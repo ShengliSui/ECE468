@@ -1,0 +1,131 @@
+import java.util.*; 
+import org.antlr.v4.runtime.*;
+
+public class SymbolTable{
+
+    private LinkedHashMap<String,String[]> field;
+    private LinkedHashMap<String,LinkedHashMap<String,String[]>> table;
+    private Deque<String> scope;
+
+    SymbolTable(){
+	/* initializing stack*/	
+	scope = new ArrayDeque<String>();
+	scope.push("GLOBAL");
+	// System.out.println("current scope = "+scope.peek());	
+
+	/* initializing table of tables*/
+	table = new LinkedHashMap<String,LinkedHashMap<String,String[]>>();
+	table.put(scope.peek(),new LinkedHashMap<String,String[]>());
+	// System.out.println("symbol table created");
+    }
+
+    public static Set<String> getKeySet(String scope){
+	return table.get(scope).keySet();
+    }
+
+    public String peekScope(){
+	return scope.peek();
+    }
+
+    public void addScope(String scopeName){
+	scope.push(scopeName);
+	table.put(scope.peek(),new LinkedHashMap<String,String[]>());
+	// System.out.println("current scope = "+scope.peek());
+    }
+
+    public void removeScope(){
+	scope.pop();
+	// System.out.println("scope removed");
+    }
+
+    public boolean containsName(String name){
+	return table.get(scope.peek()).containsKey(name) ? true : false;
+    }
+
+    public void updateField(String name, String type){
+	String[] temp = {type,null};
+	table.get(scope.peek()).put(name,temp);	
+    }
+
+    public void addField(String name, String type){
+	String[] temp = {type,null};
+	if(table.get(scope.peek()).containsKey(name)){
+	    System.out.println("DECLARATION ERROR "+name);
+	    System.exit(1);
+	}
+	table.get(scope.peek()).put(name,temp);
+	// System.out.println("Name and Type added to scope");
+    }
+
+    public void addField(String name, String type, String value){
+	String[] temp = {type,value};
+	if(table.get(scope.peek()).containsKey(name)){
+	    System.out.println("DECLARATION ERROR "+name);
+	    System.exit(1);
+	}
+	table.get(scope.peek()).put(name,temp);
+	// System.out.println("Name and Type and Value added to scope");
+    }    
+
+    public void addField(ArrayList<String> names, String type){
+	String[] temp = {type,null};
+	for(int i = 0; i < names.size(); i++){
+	    if(table.get(scope.peek()).containsKey(names.get(i))){
+		System.out.println("DECLARATION ERROR "+names.get(i));
+		System.exit(1);
+	    }
+	    table.get(scope.peek()).put(names.get(i),temp);
+	}
+	// System.out.println("Namesssss and Type added to scope");	    
+    }
+
+    public void addField(ArrayList<String> names, ArrayList<String> types){
+	for(int i = 0; i < names.size(); i++){
+	    String[] temp = {types.get(i),null};
+	    if(table.get(scope.peek()).containsKey(names.get(i))){
+		System.out.println("DECLARATION ERROR "+names.get(i));
+		System.exit(1);
+	    }
+	    table.get(scope.peek()).put(names.get(i),temp);
+	}
+	// System.out.println("Namesssss and Typesssss added to scope");	    
+    }    
+
+    public void updateTemp(String scope, String name, String type){
+	String[] temp = {type,null};
+	table.get(scope).put(name,temp);	
+    }
+
+    public String[] getScopes(){
+	return table.keySet().toArray(new String[0]);
+    }
+
+    public String[] getNames(String scopeName){
+	return table.get(scopeName).keySet().toArray(new String[0]);
+    }
+
+    public String[] getType(String scopeName, String name){
+	return table.get(scopeName).get(name);
+    }
+
+    public void printSymbolTable(){
+	String[] scopes = getScopes();
+	boolean notFirstPrint = false;
+	for(String scope : scopes){
+	    if(notFirstPrint){
+		System.out.println();
+	    }
+	    System.out.println("Symbol table " + scope);
+	    String[] names = getNames(scope);
+	    for(String name : names){
+		String[] type = getType(scope,name);
+		if(type[0] == "STRING"){
+		    System.out.println("name "+name+" type "+type[0]+" value "+type[1]);
+		}else{
+		    System.out.println("name "+name+" type "+type[0]);
+		}
+	    }
+	    notFirstPrint = true;
+	}
+    }
+}
