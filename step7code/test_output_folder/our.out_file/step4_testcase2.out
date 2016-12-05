@@ -1,0 +1,160 @@
+;IR code
+;LABEL main
+;LINK 
+;STOREI 1 $T1
+;STOREI $T1 a
+;STOREI 1 $T2
+;STOREI $T2 b
+;LABEL label1
+;STOREI 1 $T3
+;NE b $T3 label3
+;MULTI a 1 $T4
+;STOREI $T4 g
+;WRITEI g
+;JUMP label2
+;LABEL label3
+;STOREI 2 $T5
+;NE b $T5 label4
+;MULTI a 2 $T6
+;STOREI $T6 p
+;WRITEI p
+;JUMP label2
+;LABEL label4
+;STOREI 3 $T7
+;NE b $T7 label5
+;MULTI a 3 $T8
+;STOREI $T8 k
+;WRITEI k
+;JUMP label2
+;LABEL label5
+;STOREI 4 $T9
+;NE b $T9 label6
+;MULTI a 4 $T10
+;STOREI $T10 u
+;WRITEI u
+;LABEL label6
+;LABEL label2
+;ADDI 1 b $T11
+;STOREI $T11 b
+;ADDI 20 a $T12
+;STOREI $T12 a
+;STOREI 120 $T13
+;GT a $T13 label7
+;JUMP label1
+;LABEL label7
+;tiny code
+var a
+var b
+var k
+var g
+var p
+var u
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL main
+label main 
+link 0
+;LINK 
+;STOREI 1 $T1
+move 1 r0 
+;STOREI $T1 a
+move r0 a 
+;STOREI 1 $T2
+move 1 r0 
+;STOREI $T2 b
+move r0 b 
+;LABEL label1
+label label1 
+;STOREI 1 $T3
+move 1 r0 
+;NE b $T3 label3
+cmpi b r0 
+jne label3 
+;MULTI a 1 $T4
+move 1 r0 
+muli a r0 
+;STOREI $T4 g
+move r0 g 
+;WRITEI g
+sys writei g 
+;JUMP label2
+jmp label2 
+;LABEL label3
+label label3 
+;STOREI 2 $T5
+move 2 r0 
+;NE b $T5 label4
+cmpi b r0 
+jne label4 
+;MULTI a 2 $T6
+move 2 r0 
+muli a r0 
+;STOREI $T6 p
+move r0 p 
+;WRITEI p
+sys writei p 
+;JUMP label2
+jmp label2 
+;LABEL label4
+label label4 
+;STOREI 3 $T7
+move 3 r0 
+;NE b $T7 label5
+cmpi b r0 
+jne label5 
+;MULTI a 3 $T8
+move 3 r0 
+muli a r0 
+;STOREI $T8 k
+move r0 k 
+;WRITEI k
+sys writei k 
+;JUMP label2
+jmp label2 
+;LABEL label5
+label label5 
+;STOREI 4 $T9
+move 4 r0 
+;NE b $T9 label6
+cmpi b r0 
+jne label6 
+;MULTI a 4 $T10
+move 4 r0 
+muli a r0 
+;STOREI $T10 u
+move r0 u 
+;WRITEI u
+sys writei u 
+;Spilling registers at beginning of basic block
+;LABEL label6
+label label6 
+;Spilling registers at beginning of basic block
+;LABEL label2
+label label2 
+;ADDI 1 b $T11
+move 1 r0 
+addi b r0 
+;STOREI $T11 b
+move r0 b 
+;ADDI 20 a $T12
+move 20 r0 
+addi a r0 
+;STOREI $T12 a
+move r0 a 
+;STOREI 120 $T13
+move 120 r0 
+;GT a $T13 label7
+cmpi a r0 
+jgt label7 
+;Spilling registers at beginning of basic block
+;JUMP label1
+jmp label1 
+;LABEL label7
+label label7 
+end

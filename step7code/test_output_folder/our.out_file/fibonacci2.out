@@ -1,0 +1,267 @@
+;IR code
+;LABEL F
+;LINK 
+;STOREI 2 $T1
+;LE $P1 $T1 label2
+;SUBI $P1 1 $T2
+;PUSH 
+;PUSH $T2
+;JSR F
+;POP 
+;POP $T3
+;STOREI $T3 $L1
+;SUBI $P1 2 $T4
+;PUSH 
+;PUSH $T4
+;JSR F
+;POP 
+;POP $T5
+;STOREI $T5 $L2
+;ADDI $L2 $L1 $T6
+;STOREI $T6 $R
+;RET 
+;JUMP label1
+;LABEL label2
+;STOREI 0 $T7
+;NE $P1 $T7 label3
+;STOREI 0 $T8
+;STOREI $T8 $R
+;RET 
+;JUMP label1
+;LABEL label3
+;STOREI 1 $T9
+;NE $P1 $T9 label4
+;STOREI 1 $T10
+;STOREI $T10 $R
+;RET 
+;JUMP label1
+;LABEL label4
+;STOREI 2 $T11
+;NE $P1 $T11 label5
+;STOREI 1 $T12
+;STOREI $T12 $R
+;RET 
+;LABEL label5
+;LABEL label1
+;LABEL main
+;LINK 
+;STOREI 0 $T1
+;STOREI $T1 $L1
+;WRITES input
+;READI $L2
+;LABEL label6
+;PUSH 
+;PUSH $L1
+;JSR F
+;POP 
+;POP $T2
+;STOREI $T2 $L3
+;WRITEI $L1
+;WRITES space
+;WRITEI $L3
+;WRITES eol
+;ADDI 1 $L1 $T3
+;STOREI $T3 $L1
+;STOREI $L2 $T4
+;EQ $L1 $T4 label7
+;JUMP label6
+;LABEL label7
+;STOREI 0 $T5
+;STOREI $T5 $R
+;RET 
+;tiny code
+str input "Please input an integer number: "
+str space " "
+str eol "\n"
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL F
+label F 
+link 2
+;LINK 
+;STOREI 2 $T1
+move 2 r0 
+;LE $P1 $T1 label2
+cmpi $6 r0 
+jle label2 
+;SUBI $P1 1 $T2
+move $6 r0 
+subi 1 r0 
+;PUSH 
+push 
+;PUSH $T2
+push r0 
+;JSR F
+push r0
+push r1
+push r2
+push r3
+jsr F 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP $T3
+pop r0 
+;STOREI $T3 $L1
+move r0 $-1 
+;SUBI $P1 2 $T4
+move $6 r0 
+subi 2 r0 
+;PUSH 
+push 
+;PUSH $T4
+push r0 
+;JSR F
+push r0
+push r1
+push r2
+push r3
+jsr F 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP $T5
+pop r0 
+;STOREI $T5 $L2
+move r0 $-2 
+;ADDI $L2 $L1 $T6
+move $-2 r0 
+addi $-1 r0 
+;STOREI $T6 $R
+move r0 $7 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;JUMP label1
+jmp label1 
+;LABEL label2
+label label2 
+;STOREI 0 $T7
+move 0 r0 
+;NE $P1 $T7 label3
+cmpi $6 r0 
+jne label3 
+;STOREI 0 $T8
+move 0 r0 
+;STOREI $T8 $R
+move r0 $7 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;JUMP label1
+jmp label1 
+;LABEL label3
+label label3 
+;STOREI 1 $T9
+move 1 r0 
+;NE $P1 $T9 label4
+cmpi $6 r0 
+jne label4 
+;STOREI 1 $T10
+move 1 r0 
+;STOREI $T10 $R
+move r0 $7 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;JUMP label1
+jmp label1 
+;LABEL label4
+label label4 
+;STOREI 2 $T11
+move 2 r0 
+;NE $P1 $T11 label5
+cmpi $6 r0 
+jne label5 
+;STOREI 1 $T12
+move 1 r0 
+;STOREI $T12 $R
+move r0 $7 
+;RET 
+unlnk
+ret
+;LABEL label5
+label label5 
+;Spilling registers at beginning of basic block
+;LABEL label1
+label label1 
+;LABEL main
+label main 
+link 3
+;LINK 
+;STOREI 0 $T1
+move 0 r0 
+;STOREI $T1 $L1
+move r0 $-1 
+;WRITES input
+sys writes input 
+;READI $L2
+sys readi $-2 
+;LABEL label6
+label label6 
+;PUSH 
+push 
+;PUSH $L1
+push $-1 
+;JSR F
+push r0
+push r1
+push r2
+push r3
+jsr F 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP $T2
+pop r0 
+;STOREI $T2 $L3
+move r0 $-3 
+;WRITEI $L1
+sys writei $-1 
+;WRITES space
+sys writes space 
+;WRITEI $L3
+sys writei $-3 
+;WRITES eol
+sys writes eol 
+;ADDI 1 $L1 $T3
+move 1 r0 
+addi $-1 r0 
+;STOREI $T3 $L1
+move r0 $-1 
+;STOREI $L2 $T4
+move $-2 r0 
+;EQ $L1 $T4 label7
+cmpi $-1 r0 
+jeq label7 
+;Spilling registers at beginning of basic block
+;JUMP label6
+jmp label6 
+;LABEL label7
+label label7 
+;STOREI 0 $T5
+move 0 r0 
+;STOREI $T5 $R
+move r0 $6 
+;RET 
+unlnk
+ret
+end

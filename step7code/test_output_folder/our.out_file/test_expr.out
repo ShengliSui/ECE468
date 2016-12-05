@@ -1,0 +1,306 @@
+;IR code
+;LABEL main
+;LINK 
+;STOREI 1 $T1
+;STOREI $T1 a
+;STOREI 2 $T2
+;STOREI $T2 b
+;STOREI 10 $T3
+;STOREI $T3 c
+;STOREI 20 $T4
+;STOREI $T4 d
+;WRITEI a
+;WRITEI b
+;WRITEI c
+;WRITEI d
+;ADDI b a $T5
+;STOREI $T5 a
+;WRITEI a
+;MULTI c a $T6
+;STOREI $T6 b
+;WRITEI b
+;SUBI 0 a $T7
+;ADDI b $T7 $T8
+;STOREI $T8 c
+;WRITEI c
+;SUBI 0 d $T9
+;STOREI $T9 d
+;WRITEI d
+;ADDI b a $T10
+;ADDI c d $T11
+;MULTI $T11 $T10 $T12
+;ADDI b a $T13
+;ADDI c $T13 $T14
+;ADDI d $T14 $T15
+;DIVI $T15 a $T16
+;SUBI $T12 $T16 $T17
+;STOREI $T17 a
+;WRITEI a
+;ADDI 10 a $T18
+;STOREI $T18 a
+;WRITEI a
+;ADDI a b $T19
+;ADDI 10 $T19 $T20
+;STOREI $T20 b
+;WRITEI b
+;SUBI 0 10 $T21
+;STOREI $T21 c
+;WRITEI c
+;STOREF 1.0 $T22
+;STOREF $T22 x
+;STOREF 2.0 $T23
+;STOREF $T23 y
+;STOREF 3.14159 $T24
+;STOREF $T24 z
+;WRITEF x
+;WRITEF z
+;WRITEF y
+;DIVF z 2.0 $T25
+;STOREF $T25 x
+;DIVF z y $T26
+;STOREF $T26 y
+;WRITEF x
+;WRITEF y
+;ADDF y x $T27
+;ADDF z $T27 $T28
+;DIVF $T28 z $T29
+;STOREF $T29 t
+;WRITEF t
+;MULTF t t $T30
+;STOREF $T30 t
+;WRITEF t
+;ADDF z t $T31
+;ADDF t $T31 $T32
+;DIVF t 2.0 $T33
+;ADDF $T33 $T32 $T34
+;DIVF z 4.0 $T35
+;ADDF $T35 $T34 $T36
+;DIVF z 5.0 $T37
+;ADDF $T37 $T36 $T38
+;DIVF z 6.0 $T39
+;ADDF $T39 $T38 $T40
+;DIVF z 7.0 $T41
+;ADDF $T41 $T40 $T42
+;STOREF $T42 t
+;WRITEF t
+;tiny code
+var a
+var b
+var c
+var d
+var x
+var y
+var z
+var t
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL main
+label main 
+link 0
+;LINK 
+;STOREI 1 $T1
+move 1 r0 
+;STOREI $T1 a
+move r0 a 
+;STOREI 2 $T2
+move 2 r0 
+;STOREI $T2 b
+move r0 b 
+;STOREI 10 $T3
+move 10 r0 
+;STOREI $T3 c
+move r0 c 
+;STOREI 20 $T4
+move 20 r0 
+;STOREI $T4 d
+move r0 d 
+;WRITEI a
+sys writei a 
+;WRITEI b
+sys writei b 
+;WRITEI c
+sys writei c 
+;WRITEI d
+sys writei d 
+;ADDI b a $T5
+move b r0 
+addi a r0 
+;STOREI $T5 a
+move r0 a 
+;WRITEI a
+sys writei a 
+;MULTI c a $T6
+move a r0 
+muli c r0 
+;STOREI $T6 b
+move r0 b 
+;WRITEI b
+sys writei b 
+;SUBI 0 a $T7
+move 0 r0 
+subi a r0 
+;ADDI b $T7 $T8
+move b r1 
+addi r0 r1 
+;STOREI $T8 c
+move r1 c 
+;WRITEI c
+sys writei c 
+;SUBI 0 d $T9
+move 0 r0 
+subi d r0 
+;STOREI $T9 d
+move r0 d 
+;WRITEI d
+sys writei d 
+;ADDI b a $T10
+move b r0 
+addi a r0 
+;ADDI c d $T11
+move c r1 
+addi d r1 
+;MULTI $T11 $T10 $T12
+move r0 r2 
+muli r1 r2 
+;ADDI b a $T13
+move b r0 
+addi a r0 
+;ADDI c $T13 $T14
+move c r1 
+addi r0 r1 
+;ADDI d $T14 $T15
+move d r0 
+addi r1 r0 
+;DIVI $T15 a $T16
+move r0 r1 
+divi a r1 
+;SUBI $T12 $T16 $T17
+move r2 r0 
+subi r1 r0 
+;STOREI $T17 a
+move r0 a 
+;WRITEI a
+sys writei a 
+;ADDI 10 a $T18
+move 10 r0 
+addi a r0 
+;STOREI $T18 a
+move r0 a 
+;WRITEI a
+sys writei a 
+;ADDI a b $T19
+move a r0 
+addi b r0 
+;ADDI 10 $T19 $T20
+move 10 r1 
+addi r0 r1 
+;STOREI $T20 b
+move r1 b 
+;WRITEI b
+sys writei b 
+;SUBI 0 10 $T21
+move 0 r0 
+subi 10 r0 
+;STOREI $T21 c
+move r0 c 
+;WRITEI c
+sys writei c 
+;STOREF 1.0 $T22
+move 1.0 r0 
+;STOREF $T22 x
+move r0 x 
+;STOREF 2.0 $T23
+move 2.0 r0 
+;STOREF $T23 y
+move r0 y 
+;STOREF 3.14159 $T24
+move 3.14159 r0 
+;STOREF $T24 z
+move r0 z 
+;WRITEF x
+sys writer x 
+;WRITEF z
+sys writer z 
+;WRITEF y
+sys writer y 
+;DIVF z 2.0 $T25
+move z r0 
+divr 2.0 r0 
+;STOREF $T25 x
+move r0 x 
+;DIVF z y $T26
+move z r0 
+divr y r0 
+;STOREF $T26 y
+move r0 y 
+;WRITEF x
+sys writer x 
+;WRITEF y
+sys writer y 
+;ADDF y x $T27
+move y r0 
+addr x r0 
+;ADDF z $T27 $T28
+move z r1 
+addr r0 r1 
+;DIVF $T28 z $T29
+move r1 r0 
+divr z r0 
+;STOREF $T29 t
+move r0 t 
+;WRITEF t
+sys writer t 
+;MULTF t t $T30
+move t r0 
+mulr t r0 
+;STOREF $T30 t
+move r0 t 
+;WRITEF t
+sys writer t 
+;ADDF z t $T31
+move z r0 
+addr t r0 
+;ADDF t $T31 $T32
+move t r1 
+addr r0 r1 
+;DIVF t 2.0 $T33
+move t r0 
+divr 2.0 r0 
+;ADDF $T33 $T32 $T34
+move r0 r2 
+addr r1 r2 
+;DIVF z 4.0 $T35
+move z r0 
+divr 4.0 r0 
+;ADDF $T35 $T34 $T36
+move r0 r1 
+addr r2 r1 
+;DIVF z 5.0 $T37
+move z r0 
+divr 5.0 r0 
+;ADDF $T37 $T36 $T38
+move r0 r2 
+addr r1 r2 
+;DIVF z 6.0 $T39
+move z r0 
+divr 6.0 r0 
+;ADDF $T39 $T38 $T40
+move r0 r1 
+addr r2 r1 
+;DIVF z 7.0 $T41
+move z r0 
+divr 7.0 r0 
+;ADDF $T41 $T40 $T42
+move r0 r2 
+addr r1 r2 
+;STOREF $T42 t
+move r2 t 
+;WRITEF t
+sys writer t 
+end

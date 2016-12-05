@@ -1,0 +1,192 @@
+;IR code
+;LABEL add
+;LINK 
+;ADDF $P1 $P2 $T1
+;STOREF $T1 $L1
+;STOREF $L1 $T2
+;STOREF $T2 $R
+;RET 
+;LABEL multiply
+;LINK 
+;MULTF $P1 $P2 $T1
+;STOREF $T1 $L1
+;STOREF $L1 $T2
+;STOREF $T2 $R
+;RET 
+;LABEL main
+;LINK 
+;WRITES intro
+;WRITES first
+;READF $L1
+;WRITES second
+;READF $L2
+;WRITES third
+;READF $L3
+;PUSH 
+;PUSH $L1
+;PUSH $L2
+;JSR multiply
+;POP 
+;POP 
+;POP $T1
+;STOREF $T1 $L5
+;PUSH 
+;PUSH $L5
+;PUSH $L3
+;JSR add
+;POP 
+;POP 
+;POP $T2
+;STOREF $T2 $L4
+;WRITEF $L1
+;WRITES star
+;WRITEF $L2
+;WRITES plus
+;WRITEF $L3
+;WRITES equal
+;WRITEF $L4
+;WRITES eol
+;STOREI 0 $T3
+;STOREI $T3 $R
+;RET 
+;tiny code
+str intro "You will be asked for three float numbers\n"
+str first "Please enter the first float number: "
+str second "Please enter the second float number: "
+str third "Please enter the third float number: "
+str eol "\n"
+str star "*"
+str plus "+"
+str equal "="
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL add
+label add 
+link 1
+;LINK 
+;ADDF $P1 $P2 $T1
+move $6 r0 
+addr $7 r0 
+;STOREF $T1 $L1
+move r0 $-1 
+;STOREF $L1 $T2
+move $-1 r0 
+;STOREF $T2 $R
+move r0 $8 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;LABEL multiply
+label multiply 
+link 1
+;LINK 
+;MULTF $P1 $P2 $T1
+move $7 r0 
+mulr $6 r0 
+;STOREF $T1 $L1
+move r0 $-1 
+;STOREF $L1 $T2
+move $-1 r0 
+;STOREF $T2 $R
+move r0 $8 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;LABEL main
+label main 
+link 5
+;LINK 
+;WRITES intro
+sys writes intro 
+;WRITES first
+sys writes first 
+;READF $L1
+sys readr $-1 
+;WRITES second
+sys writes second 
+;READF $L2
+sys readr $-2 
+;WRITES third
+sys writes third 
+;READF $L3
+sys readr $-3 
+;PUSH 
+push 
+;PUSH $L1
+push $-1 
+;PUSH $L2
+push $-2 
+;JSR multiply
+push r0
+push r1
+push r2
+push r3
+jsr multiply 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP 
+pop 
+;POP $T1
+pop r0 
+;STOREF $T1 $L5
+move r0 $-5 
+;PUSH 
+push 
+;PUSH $L5
+push $-5 
+;PUSH $L3
+push $-3 
+;JSR add
+push r0
+push r1
+push r2
+push r3
+jsr add 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP 
+pop 
+;POP $T2
+pop r0 
+;STOREF $T2 $L4
+move r0 $-4 
+;WRITEF $L1
+sys writer $-1 
+;WRITES star
+sys writes star 
+;WRITEF $L2
+sys writer $-2 
+;WRITES plus
+sys writes plus 
+;WRITEF $L3
+sys writer $-3 
+;WRITES equal
+sys writes equal 
+;WRITEF $L4
+sys writer $-4 
+;WRITES eol
+sys writes eol 
+;STOREI 0 $T3
+move 0 r0 
+;STOREI $T3 $R
+move r0 $6 
+;RET 
+unlnk
+ret
+end

@@ -1,0 +1,191 @@
+;IR code
+;LABEL factorial
+;LINK 
+;STOREI 1 $T1
+;NE $P1 $T1 label2
+;STOREI 1 $T2
+;STOREI $T2 $R
+;RET 
+;JUMP label1
+;LABEL label2
+;SUBI $P1 1 $T3
+;PUSH 
+;PUSH $T3
+;JSR factorial
+;POP 
+;POP $T4
+;STOREI $T4 $L2
+;MULTI $P1 $L2 $T5
+;STOREI $T5 $L1
+;LABEL label1
+;STOREI $L1 $T6
+;STOREI $T6 $R
+;RET 
+;LABEL main
+;LINK 
+;WRITES input
+;READI $L1
+;STOREI 1 $T1
+;NE $L1 $T1 label4
+;STOREI 1 $T2
+;STOREI $T2 $L2
+;JUMP label3
+;LABEL label4
+;STOREI 1 $T3
+;LE $L1 $T3 label5
+;PUSH 
+;PUSH $L1
+;JSR factorial
+;POP 
+;POP $T4
+;STOREI $T4 $L2
+;JUMP label3
+;LABEL label5
+;STOREI 0 $T5
+;STOREI $T5 $L2
+;LABEL label3
+;WRITEI $L2
+;WRITES eol
+;STOREI 0 $T6
+;STOREI $T6 $R
+;RET 
+;tiny code
+str input "Please enter an integer number: "
+str eol "\n"
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL factorial
+label factorial 
+link 2
+;LINK 
+;STOREI 1 $T1
+move 1 r0 
+;NE $P1 $T1 label2
+cmpi $6 r0 
+jne label2 
+;STOREI 1 $T2
+move 1 r0 
+;STOREI $T2 $R
+move r0 $7 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;JUMP label1
+jmp label1 
+;LABEL label2
+label label2 
+;SUBI $P1 1 $T3
+move $6 r0 
+subi 1 r0 
+;PUSH 
+push 
+;PUSH $T3
+push r0 
+;JSR factorial
+push r0
+push r1
+push r2
+push r3
+jsr factorial 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP $T4
+pop r0 
+;STOREI $T4 $L2
+move r0 $-2 
+;MULTI $P1 $L2 $T5
+move $-2 r0 
+muli $6 r0 
+;STOREI $T5 $L1
+move r0 $-1 
+;Spilling registers at beginning of basic block
+;LABEL label1
+label label1 
+;STOREI $L1 $T6
+move $-1 r0 
+;STOREI $T6 $R
+move r0 $7 
+;RET 
+unlnk
+ret
+;Spilling registers at beginning of basic block
+;LABEL main
+label main 
+link 2
+;LINK 
+;WRITES input
+sys writes input 
+;READI $L1
+sys readi $-1 
+;STOREI 1 $T1
+move 1 r0 
+;NE $L1 $T1 label4
+cmpi $-1 r0 
+jne label4 
+;STOREI 1 $T2
+move 1 r0 
+;STOREI $T2 $L2
+move r0 $-2 
+;JUMP label3
+jmp label3 
+;LABEL label4
+label label4 
+;STOREI 1 $T3
+move 1 r0 
+;LE $L1 $T3 label5
+cmpi $-1 r0 
+jle label5 
+;PUSH 
+push 
+;PUSH $L1
+push $-1 
+;JSR factorial
+push r0
+push r1
+push r2
+push r3
+jsr factorial 
+pop r3
+pop r2
+pop r1
+pop r0
+;POP 
+pop 
+;POP $T4
+pop r0 
+;STOREI $T4 $L2
+move r0 $-2 
+;JUMP label3
+jmp label3 
+;LABEL label5
+label label5 
+;STOREI 0 $T5
+move 0 r0 
+;STOREI $T5 $L2
+move r0 $-2 
+;Spilling registers at beginning of basic block
+;LABEL label3
+label label3 
+;WRITEI $L2
+sys writei $-2 
+;WRITES eol
+sys writes eol 
+;STOREI 0 $T6
+move 0 r0 
+;STOREI $T6 $R
+move r0 $6 
+;RET 
+unlnk
+ret
+end

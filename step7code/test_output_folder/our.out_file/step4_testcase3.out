@@ -1,0 +1,100 @@
+;IR code
+;LABEL main
+;LINK 
+;STOREI 20 $T1
+;STOREI $T1 a
+;STOREI 30 $T2
+;STOREI $T2 b
+;STOREI 40 $T3
+;STOREI $T3 c
+;MULTI b a $T4
+;ADDI $T4 c $T5
+;MULTI b a $T6
+;ADDI c $T6 $T7
+;DIVI $T7 a $T8
+;ADDI $T8 $T5 $T9
+;ADDI 20 $T9 $T10
+;STOREI $T10 c
+;MULTI b b $T11
+;ADDI a $T11 $T12
+;STOREI $T12 b
+;MULTI a b $T13
+;DIVI $T13 a $T14
+;STOREI $T14 a
+;WRITEI c
+;WRITEI b
+;WRITEI a
+;tiny code
+var a
+var b
+var c
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL main
+label main 
+link 0
+;LINK 
+;STOREI 20 $T1
+move 20 r0 
+;STOREI $T1 a
+move r0 a 
+;STOREI 30 $T2
+move 30 r0 
+;STOREI $T2 b
+move r0 b 
+;STOREI 40 $T3
+move 40 r0 
+;STOREI $T3 c
+move r0 c 
+;MULTI b a $T4
+move a r0 
+muli b r0 
+;ADDI $T4 c $T5
+move r0 r1 
+addi c r1 
+;MULTI b a $T6
+move a r0 
+muli b r0 
+;ADDI c $T6 $T7
+move c r2 
+addi r0 r2 
+;DIVI $T7 a $T8
+move r2 r0 
+divi a r0 
+;ADDI $T8 $T5 $T9
+move r0 r2 
+addi r1 r2 
+;ADDI 20 $T9 $T10
+move 20 r0 
+addi r2 r0 
+;STOREI $T10 c
+move r0 c 
+;MULTI b b $T11
+move b r0 
+muli b r0 
+;ADDI a $T11 $T12
+move a r1 
+addi r0 r1 
+;STOREI $T12 b
+move r1 b 
+;MULTI a b $T13
+move b r0 
+muli a r0 
+;DIVI $T13 a $T14
+move r0 r1 
+divi a r1 
+;STOREI $T14 a
+move r1 a 
+;WRITEI c
+sys writei c 
+;WRITEI b
+sys writei b 
+;WRITEI a
+sys writei a 
+end

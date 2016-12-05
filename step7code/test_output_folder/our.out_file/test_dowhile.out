@@ -1,0 +1,94 @@
+;IR code
+;LABEL main
+;LINK 
+;STOREF 7.0 $T1
+;STOREF $T1 num
+;STOREI 100 $T2
+;STOREI $T2 i
+;STOREI 1 $T3
+;STOREI $T3 j
+;STOREF num $T4
+;STOREF $T4 approx
+;LABEL label1
+;DIVF num approx $T5
+;ADDF $T5 approx $T6
+;MULTF $T6 0.5 $T7
+;STOREF $T7 newapprox
+;STOREF newapprox $T8
+;STOREF $T8 approx
+;SUBI i 1 $T9
+;STOREI $T9 i
+;STOREI 0 $T10
+;EQ i $T10 label2
+;JUMP label1
+;LABEL label2
+;WRITEF approx
+;tiny code
+var i
+var j
+var newapprox
+var approx
+var num
+push 
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+;Spilling registers at beginning of basic block
+;LABEL main
+label main 
+link 0
+;LINK 
+;STOREF 7.0 $T1
+move 7.0 r0 
+;STOREF $T1 num
+move r0 num 
+;STOREI 100 $T2
+move 100 r0 
+;STOREI $T2 i
+move r0 i 
+;STOREI 1 $T3
+move 1 r0 
+;STOREI $T3 j
+move r0 j 
+;STOREF num $T4
+move num r0 
+;STOREF $T4 approx
+move r0 approx 
+;LABEL label1
+label label1 
+;DIVF num approx $T5
+move num r0 
+divr approx r0 
+;ADDF $T5 approx $T6
+move r0 r1 
+addr approx r1 
+;MULTF $T6 0.5 $T7
+move 0.5 r0 
+mulr r1 r0 
+;STOREF $T7 newapprox
+move r0 newapprox 
+;STOREF newapprox $T8
+move newapprox r0 
+;STOREF $T8 approx
+move r0 approx 
+;SUBI i 1 $T9
+move i r0 
+subi 1 r0 
+;STOREI $T9 i
+move r0 i 
+;STOREI 0 $T10
+move 0 r0 
+;EQ i $T10 label2
+cmpi i r0 
+jeq label2 
+;Spilling registers at beginning of basic block
+;JUMP label1
+jmp label1 
+;LABEL label2
+label label2 
+;WRITEF approx
+sys writer approx 
+end
